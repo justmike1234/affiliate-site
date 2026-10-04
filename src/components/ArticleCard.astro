@@ -1,0 +1,27 @@
+---
+import { SITE } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  article: CollectionEntry<"articles">;
+}
+
+const { article } = Astro.props;
+const href = absoluteUrl(`/articles/${article.id}/`);
+const date = article.data.publishDate;
+---
+
+<a class="card" href={href}>
+  <p class="card-date">
+    <time datetime={date.toISOString()}>{date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</time>
+  </p>
+  <h3 class="card-title">{article.data.title}</h3>
+  <p class="card-description">{article.data.description}</p>
+  {article.data.keywords.length > 0 && (
+    <p class="card-keywords">
+      {article.data.keywords.slice(0, 3).map((k) => <span class="chip">{k}</span>)}
+    </p>
+  )}
+  <span class="card-read">{SITE.name} · Read the guide →</span>
+</a>

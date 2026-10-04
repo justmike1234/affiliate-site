@@ -1,0 +1,11 @@
+---
+import { AFFILIATE_DISCLOSURE } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+---
+
+<aside class="affiliate-disclosure" role="note" aria-label="Affiliate disclosure">
+  <p>
+    <strong>Affiliate disclosure:</strong> {AFFILIATE_DISCLOSURE} See our
+    <a href={absoluteUrl("/articles/editorial-policy/")}>editorial policy</a> for details.
+  </p>
+</aside>

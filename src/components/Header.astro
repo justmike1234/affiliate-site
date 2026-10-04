@@ -1,0 +1,14 @@
+---
+import { SITE } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href={absoluteUrl("/")}>{SITE.name}</a>
+    <nav aria-label="Main">
+      <a href={absoluteUrl("/")}>Home</a>
+      <a href={absoluteUrl("/about/")}>About</a>
+    </nav>
+  </div>
+</header>

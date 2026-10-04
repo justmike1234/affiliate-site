@@ -1,0 +1,96 @@
+# Publishing pipeline: a push to main builds the site and deploys it.
+# A broken build fails the workflow in red and nothing is deployed.
+#
+# Two deploy targets:
+#   1. GitHub Pages  — active immediately (interim hosting while the
+#      owner-gated Cloudflare handoff is pending).
+#   2. Cloudflare Pages — activates automatically once the owner-gated
+#      CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID secrets are configured
+#      on this repo (exact steps in the JAN-4 owner handoff document).
+#
+# Secrets are never stored in the repo: GitHub secrets/variables only.
+# Build-time configuration (PUBLIC_SITE_ORIGIN, PUBLIC_BASE_PATH,
+# PUBLIC_PLAUSIBLE_DOMAIN, PUBLIC_PLAUSIBLE_SRC) comes from repo variables
+# with safe defaults below.
+
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (a failure here fails this workflow loudly and aborts every deploy)
+        run: npm run build
+        env:
+          PUBLIC_SITE_ORIGIN: ${{ vars.PUBLIC_SITE_ORIGIN || 'https://justmike1234.github.io' }}
+          PUBLIC_BASE_PATH: ${{ vars.PUBLIC_BASE_PATH || '/affiliate-site' }}
+          PUBLIC_PLAUSIBLE_DOMAIN: ${{ vars.PUBLIC_PLAUSIBLE_DOMAIN }}
+          PUBLIC_PLAUSIBLE_SRC: ${{ vars.PUBLIC_PLAUSIBLE_SRC }}
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy-pages:
+    name: Deploy to GitHub Pages (interim host)
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-cloudflare:
+    name: Deploy to Cloudflare Pages (owner-gated)
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Deploy via wrangler when owner secrets exist
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_PAGES_PROJECT: ${{ vars.CF_PAGES_PROJECT }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Skipping Cloudflare Pages deploy: owner-gated secrets are not configured yet."
+            echo "See the JAN-4 owner handoff document for the exact setup steps."
+            exit 0
+          fi
+          npx --yes wrangler@4 pages deploy dist --project-name "${CF_PAGES_PROJECT:-affiliate-site}" --branch main

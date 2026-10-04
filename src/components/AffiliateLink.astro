@@ -1,0 +1,80 @@
+---
+// The one and only way articles reference affiliate links. Articles name a
+// program by id and a product slug; this component builds the tracked URL,
+// forces rel="sponsored nofollow", and fires an analytics click event.
+// Raw affiliate URLs never appear in article files.
+import { AFFILIATE_PROGRAMS, type AffiliateProgram } from "../config/site";
+import { campaignFromPath } from "../lib/urls";
+
+interface Props {
+  /** Program id from AFFILIATE_PROGRAMS in src/config/site.ts. Defaults to the placeholder program. */
+  program?: string;
+  /** Product/SKU slug the program's tracking URL expects. */
+  product: string;
+  /** Optional campaign override. Defaults to the current article slug. */
+  campaign?: string;
+  /** Link text. */
+  label?: string;
+  /** Optional retailer/program note rendered after the label. */
+  note?: string;
+}
+
+const { program = "example", product, campaign, label = "Check price", note } = Astro.props;
+
+const prog: AffiliateProgram | undefined = AFFILIATE_PROGRAMS[program];
+if (!prog) {
+  throw new Error(
+    `[AffiliateLink] Unknown program "${program}". Add it to AFFILIATE_PROGRAMS in src/config/site.ts first. Never paste a raw affiliate URL into an article.`,
+  );
+}
+
+const url = new URL(prog.baseUrl);
+for (const [key, value] of Object.entries(prog.trackingParams)) {
+  url.searchParams.set(key, value);
+}
+if (product) url.searchParams.set("product", product);
+url.searchParams.set("campaign", campaign || campaignFromPath(Astro.url.pathname));
+const href = url.href;
+---
+
+<a
+  href={href}
+  rel="sponsored nofollow noopener"
+  target="_blank"
+  class="affiliate-link"
+  data-affiliate-link
+  data-aff-program={program}
+  data-aff-product={product}
+>{label}{note && <span class="affiliate-note"> — {note}</span>}<span aria-hidden="true" class="affiliate-arrow">↗</span></a>
+
+<script>
+  // Fires an analytics event for every outbound affiliate click. Uses
+  // window.plausible (queued if the analytics script has not loaded yet) and
+  // mirrors to dataLayer so GA4/other collectors can pick it up too.
+  function bindAffiliateLinks() {
+    document.querySelectorAll("a[data-affiliate-link]").forEach((el) => {
+      const a = el;
+      if (a.dataset.affBound === "1") return;
+      a.dataset.affBound = "1";
+      a.addEventListener("click", function () {
+        var detail = {
+          program: a.dataset.affProgram || "unknown",
+          product: a.dataset.affProduct || "unknown",
+          path: window.location.pathname,
+        };
+        try {
+          if (typeof window.plausible === "function") {
+            window.plausible("Affiliate Link Click", { props: detail });
+          } else if (window.plausible && window.plausible.q) {
+            window.plausible.q.push(["Affiliate Link Click", { props: detail }]);
+          }
+        } catch (e) {}
+        try {
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({ event: "affiliate_click", affiliate: detail });
+        } catch (e) {}
+      });
+    });
+  }
+  bindAffiliateLinks();
+</script>

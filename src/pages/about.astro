@@ -1,0 +1,27 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { SITE } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+---
+
+<BaseLayout title="About" description={`What ${SITE.name} is and how it works.`}>
+  <article class="article">
+    <header class="article-header">
+      <h1>About {SITE.name}</h1>
+      <p class="article-description">{SITE.description}</p>
+    </header>
+    <div class="article-body">
+      <p>
+        {SITE.name} exists to answer one question well: what is actually worth buying? No
+        sponsored posts, no paid placements, no top-ten lists padded to hit a quota.
+      </p>
+      <p>
+        Guides are researched against the questions real buyers ask, compared honestly against
+        the competition, and updated when the answer changes. The site is funded by affiliate
+        commissions, disclosed on every page that carries them — commissions are how the work
+        gets paid for, never a vote in the picks.
+      </p>
+      <p>Start with <a href={absoluteUrl("/articles/how-we-test/")}>how we test</a> for the full methodology.</p>
+    </div>
+  </article>
+</BaseLayout>

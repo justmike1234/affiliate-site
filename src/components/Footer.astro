@@ -1,0 +1,19 @@
+---
+import { SITE, AFFILIATE_DISCLOSURE_SHORT } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-brand">{SITE.name}</p>
+    <p class="footer-disclosure">{AFFILIATE_DISCLOSURE_SHORT}</p>
+    <nav aria-label="Footer">
+      <a href={absoluteUrl("/")}>Home</a>
+      <a href={absoluteUrl("/about/")}>About</a>
+      <a href={absoluteUrl("/articles/how-we-test/")}>How we test</a>
+    </nav>
+    <p class="footer-copy">© {year} {SITE.name}</p>
+  </div>
+</footer>

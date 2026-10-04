@@ -1,0 +1,6 @@
+# Cloudflare Pages project definition for wrangler direct-upload deploys.
+# The project itself is created by the owner during the handoff (see the
+# JAN-4 owner handoff document); this file only needs its name to match.
+name = "affiliate-site"
+compatibility_date = "2026-01-01"
+pages_build_output_dir = "dist"

@@ -1,0 +1,42 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  type?: "website" | "article";
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  keywords?: string[];
+  affiliate?: boolean;
+}
+
+const props = Astro.props;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <BaseHead {...props} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <Header />
+    {props.affiliate && (
+      <div class="site-disclosure" role="note">
+        <div class="container">
+          <p>We earn commissions from qualifying purchases made through links on this site.</p>
+        </div>
+      </div>
+    )}
+    <main id="main" class="container">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

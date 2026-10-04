@@ -1,0 +1,32 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import { SITE } from "../config/site";
+import { getCollection } from "astro:content";
+import { absoluteUrl } from "../lib/urls";
+
+const articles = (await getCollection("articles", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.publishDate.valueOf() - a.data.publishDate.valueOf(),
+);
+---
+
+<BaseLayout title={SITE.name} description={SITE.description}>
+  <section class="hero">
+    <p class="hero-kicker">Independent buying guides</p>
+    <h1>{SITE.tagline}</h1>
+    <p class="hero-lede">{SITE.description}</p>
+    <p class="hero-cta">
+      <a class="button" href={absoluteUrl("/articles/how-we-test/")}>How we test</a>
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>Latest guides</h2>
+    <div class="card-grid">
+      {articles.map((article) => <ArticleCard article={article} />)}
+    </div>
+    {articles.length === 0 && (
+      <p class="empty">The first guides are being written. Check back shortly.</p>
+    )}
+  </section>
+</BaseLayout>

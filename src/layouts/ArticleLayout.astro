@@ -1,0 +1,70 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import AffiliateDisclosure from "../components/AffiliateDisclosure.astro";
+import { SITE } from "../config/site";
+import { absoluteUrl } from "../lib/urls";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  article: CollectionEntry<"articles">;
+}
+
+const { article } = Astro.props;
+const { data } = article;
+
+const url = absoluteUrl(`/articles/${article.id}/`);
+const ogImage = absoluteUrl(data.ogImage ?? SITE.defaultOgImage);
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: data.title,
+  description: data.description,
+  datePublished: data.publishDate.toISOString(),
+  dateModified: (data.updatedDate ?? data.publishDate).toISOString(),
+  keywords: data.keywords.join(", "),
+  author: { "@type": "Organization", name: SITE.name, url: absoluteUrl("/") },
+  publisher: {
+    "@type": "Organization",
+    name: SITE.name,
+    url: absoluteUrl("/"),
+    logo: { "@type": "ImageObject", url: ogImage },
+  },
+  image: ogImage,
+  mainEntityOfPage: { "@type": "WebPage", "@id": url },
+};
+---
+
+<BaseLayout
+  title={data.title}
+  description={data.description}
+  image={data.ogImage}
+  type="article"
+  publishedTime={data.publishDate}
+  modifiedTime={data.updatedDate}
+  keywords={data.keywords}
+  affiliate={data.affiliate}
+>
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />
+  <article class="article">
+    <header class="article-header">
+      <p class="article-meta">
+        <time datetime={data.publishDate.toISOString()}>
+          {data.publishDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+        </time>
+        {data.updatedDate && data.updatedDate.getTime() !== data.publishDate.getTime() && (
+          <>
+            <span aria-hidden="true"> · </span>
+            <span>Updated <time datetime={data.updatedDate.toISOString()}>{data.updatedDate.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</time></span>
+          </>
+        )}
+      </p>
+      <h1>{data.title}</h1>
+      <p class="article-description">{data.description}</p>
+    </header>
+    {data.affiliate && <AffiliateDisclosure />}
+    <div class="article-body">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
